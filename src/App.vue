@@ -1,6 +1,5 @@
 <template>
-  <div class="text-block">
-    {{dragPlaceId}}
+  <div class="wrapper">
     <pre @drop="drop" @dragover="allowDrop" id="box-droppable">
       Lorem Ipsum is simply dummy text of
       the printing and <span class="drag-place" id="drag-place-1" @click="setDragItem('drag-place-1')">....</span>  industry. Lorem Ipsum has been the industry's
@@ -12,11 +11,10 @@
     </pre>
 
     <div class="items">
-      <span class="item word" :id="item.id" :class="{'is-disabled':!isEnable(item.id), 'active':transferId === item.id}"
+      <span class="item word" :id="item.id" :class="{'is-disabled':!isEnable(item.id), 'active':transferWordId === item.id}"
             @dragstart="onDragging"
-            @dragend="onEnd"
             @click="clickToSelect(item.id)"
-            :draggable="isEnable(item.id) && transferId !== item.id" v-for="item in wordList" :key="item.id">{{
+            :draggable="isEnable(item.id) && transferWordId !== item.id" v-for="item in wordList" :key="item.id">{{
           item.label
         }}
       </span>
@@ -29,12 +27,11 @@
 
 export default {
   name: 'App',
-
   data() {
     return {
-      transferId: null,
-      dragPlaceId: [],
-      draggedItemsId: [],
+      transferWordId: null,
+      dragPlaceIds: [],
+      draggedWordsIds: [],
       wordList: [
         {id: 'word1', label: 'First Item'},
         {id: 'word2', label: 'Second Item'},
@@ -46,7 +43,7 @@ export default {
   computed: {
     isEnable() {
       return (id) => {
-        return !this.draggedItemsId.includes(id)
+        return !this.draggedWordsIds.includes(id)
       }
     }
   },
@@ -65,29 +62,59 @@ export default {
     allowDrop(ev) {
       ev.preventDefault();
     },
-    drag(ev) {
-      ev.dataTransfer.setData("text", ev.target.id);
-    },
-    onEnd(){
-      // const wordId = ev.target.id
-      // const copyWord = document.getElementById(`copy-${wordId}`)
-      // this.dragPlaceId.push({[wordId]: copyWord.parentNode.id })
-    },
     drop(ev) {
       ev.preventDefault();
-      let id = ev.dataTransfer.getData("text");
 
-      ev.target.textContent = '';
-      this.dragPlaceId.push({[id]: ev.target.id })
+      if (ev.target.id !== 'box-droppable') {
+        ev.target.textContent = '';
 
-      //Clone item
-      const selectedItem = document.getElementById(id)
+        let id = ev.dataTransfer.getData("text");
+        this.dragPlaceIds.push({[id]: ev.target.id })
+        const selectedItem = document.getElementById(id)
+
+        //Clone item
+        const cloneNode = this.cloneNodeItem(selectedItem,id)
+
+        //Append Cloned node
+        this.draggedWordsIds.push(id)
+        ev.target.appendChild(cloneNode);
+      }
+    },
+
+    clickToSelect(id) {
+      if (this.transferWordId === id){
+        return  this.transferWordId = null
+      }
+
+      this.transferWordId = id
+    },
+
+    setDragItem(id) {
+      if (this.transferWordId) {
+        this.dragPlaceIds.push({[this.transferWordId]: id })
+        const replaceContainer = document.getElementById(id)
+        const replaceItem = document.getElementById(this.transferWordId)
+        replaceItem.classList.remove('active')
+
+        //Clone item
+        const cloneNode = this.cloneNodeItem(replaceItem,this.transferWordId)
+
+        //Append Cloned node
+        this.draggedWordsIds.push(this.transferWordId)
+        this.transferWordId = null
+        document.getElementById(id).textContent = '';
+        replaceContainer.appendChild(cloneNode);
+      }
+    },
+
+    cloneNodeItem(selectedItem,id){
+      //Clone node item
       let cloneNode = selectedItem.cloneNode(true)
       cloneNode.setAttribute('id', `copy-${id}`)
       cloneNode.setAttribute('draggable', false)
 
 
-      //Cloned item add close word
+      //In Cloned item add close btn
       const node = document.createElement("span");
       const textnode = document.createTextNode("X");
       node.appendChild(textnode);
@@ -95,48 +122,7 @@ export default {
       node.setAttribute('id', `close-${id}`)
       cloneNode.appendChild(node)
 
-
-      //Append Cloned node
-      this.draggedItemsId.push(id)
-      ev.target.appendChild(cloneNode);
-    },
-
-    clickToSelect(id) {
-      if (this.transferId === id){
-        return  this.transferId = null
-      }
-
-      this.transferId = id
-    },
-
-    setDragItem(id) {
-      if (this.transferId) {
-        this.dragPlaceId.push({[this.transferId]: id })
-        const replaceContainer = document.getElementById(id)
-        const replaceItem = document.getElementById(this.transferId)
-        replaceItem.classList.remove('active')
-
-        //Clone item
-        let cloneNode = replaceItem.cloneNode(true)
-        cloneNode.setAttribute('id', `copy-${this.transferId}`)
-        cloneNode.setAttribute('draggable', false)
-
-
-        //Cloned item add close word
-        const node = document.createElement("span");
-        const textnode = document.createTextNode("X");
-        node.appendChild(textnode);
-        node.setAttribute('class', 'close')
-        node.setAttribute('id', `close-${this.transferId}`)
-        cloneNode.appendChild(node)
-
-
-        //Append Cloned node
-        this.draggedItemsId.push(this.transferId)
-        this.transferId = null
-        document.getElementById(id).textContent = '';
-        replaceContainer.appendChild(cloneNode);
-      }
+      return cloneNode
     },
 
     closeItem(e) {
@@ -144,13 +130,14 @@ export default {
         const closeId = e.target.id
         const wordId = closeId.slice(6)
 
-        this.dragPlaceId = this.dragPlaceId.filter((item)=> {
+        this.dragPlaceIds = this.dragPlaceIds.filter((item)=> {
           if (Object.keys(item)[0] !== wordId) return item
           else {
             document.getElementById(Object.values(item)[0]).textContent = '....'
           }
         })
-        this.draggedItemsId = this.draggedItemsId.filter((item) => item !== wordId)
+
+        this.draggedWordsIds = this.draggedWordsIds.filter((item) => item !== wordId)
       }
     }
   }
@@ -206,7 +193,10 @@ pre {
 }
 
 .items {
-  margin-top: 150px;
+  margin-top: 70px;
+  width: 300px;
+  display: flex;
+  justify-content: space-between;
 }
 
 .drag-place {
