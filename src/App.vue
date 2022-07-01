@@ -1,113 +1,133 @@
 <template>
   <div class="wrapper">
-    <pre @drop="drop" @dragover="allowDrop" id="box-droppable">
-      Lorem Ipsum is simply dummy text of
-      the printing and <span class="drag-place" id="drag-place-1" @click="setDragItem('drag-place-1')">....</span>  industry. Lorem Ipsum has been the industry's
-      standard dummy text ever since the 1500s,
-      when an unknown printer took a galley of type and scrambled it to <span class="drag-place" id="drag-place-2"
-                                                                              @click="setDragItem('drag-place-2')">....</span> specimen book.
-      It <span class="drag-place" id="drag-place-3" @click="setDragItem('drag-place-3')">....</span> survived not only five centuries, but also the leap into electronic typesetting,
-      remaining essentially unchanged.
-    </pre>
+        <pre @drop="drop" @dragover="allowDrop" id="box-droppable">
+            Liebe Claudia,
+    entschuldige, dass ich mich so lange nicht bei dir gemeldet
+    Wie du weißt, bin ich vor zwei Wochen <span class="drag-place" id="drag-place-1" @click="setDragItem">....</span>
+            Deswegen hatte ich leider keine Zeit <span class="drag-place" id="drag-place-2"
+                                                       @click="setDragItem">....</span>  meine Freunde. Aber deinen
+    Vorschlag, mal wieder gemeinsam <span class="drag-place" id="drag-place-3"
+                                          @click="setDragItem">....</span>  Tag miteinander zu verbringen, finde ich sehr gut. Mir passt es auch am besten am
+    Wochenende. Würde es bei dir schon <span class="drag-place" id="drag-place-4"
+                                             @click="setDragItem">....</span>  Samstag gehen? Da habe ich noch nichts vor. Es würde
+            <span class="drag-place" id="drag-place-5" @click="setDragItem">....</span>  natürlich freuen, wenn
+    du dir bei dieser Gelegenheit auch meine neue Wohnung anschaust. Es ist wunderbar, so viel zu haben. Was meinst du, wir
+    uns bei mir treffen und dann unsere Einkaufstour machen? Oder ist es dir <span class="drag-place" id="drag-place-6"
+                                                                                   @click="setDragItem">....</span>  , wenn wir zuerst einkaufen und am Abend
+    zusammen kochen und essen? Übrigens, können wir dein Auto nehmen? <span class="drag-place" id="drag-place-7"
+                                                                            @click="setDragItem">....</span>  steht schon wieder in der Werkstatt. Schreib mir
+    doch bald, ob du an diesem Tag Zeit hast. <span class="drag-place" id="drag-place-8"
+                                                    @click="setDragItem">....</span>  du keine Zeit hast, finden wir sicher einen anderen Tag.
+    Marion
+
+        </pre>
 
     <div class="items">
-      <span class="item word" :id="item.id" :class="{'is-disabled':!isEnable(item.id), 'active':transferWordId === item.id}"
-            @dragstart="onDragging"
-            @click="clickToSelect(item.id)"
-            :draggable="isEnable(item.id) && transferWordId !== item.id" v-for="item in wordList" :key="item.id">{{
-          item.label
-        }}
-      </span>
+          <span class="item word" :id="item.id"
+                :class="{'is-disabled':!isEnable(item.id), 'active':transferWordId === item.id}"
+                @dragstart="onDragging"
+                @click="clickToSelect(item.id)"
+                :draggable="isEnable(item.id) && transferWordId !== item.id" v-for="item in wordList" :key="item.id">
+              {{
+              item.label
+            }}
+          </span>
     </div>
   </div>
 
 </template>
 
 <script>
+import {ref, reactive, onMounted, onBeforeUnmount} from "vue";
+
 
 export default {
-  name: 'App',
-  data() {
-    return {
-      transferWordId: null,
-      dragPlaceIds: [],
-      draggedWordsIds: [],
-      wordList: [
-        {id: 'word1', label: 'First Item'},
-        {id: 'word2', label: 'Second Item'},
-        {id: 'word3', label: 'Third Item'},
-      ]
+  setup() {
+
+    //State
+    const transferWordId = ref(null);
+    let dragPlaceIds = reactive([]);
+    let draggedWordsIds = ref([]);
+    const wordList = [
+      {id: 'word1', label: 'umgezogen'},
+      {id: 'word2', label: 'mich'},
+      {id: 'word3', label: 'einen'},
+      {id: 'word4', label: 'nächsten'},
+      {id: 'word5', label: 'für'},
+      {id: 'word6', label: 'lieber'},
+      {id: 'word7', label: 'wollen'},
+      {id: 'word8', label: 'Meines'},
+    ]
+
+    onMounted(() => {
+      document.addEventListener('click', closeItem);
+    });
+
+    onBeforeUnmount(() => {
+      document.removeEventListener('click', closeItem);
+    });
+
+
+    //Methods
+    function isEnable(id) {
+      return !draggedWordsIds.value.includes(id);
     }
-  },
 
-  computed: {
-    isEnable() {
-      return (id) => {
-        return !this.draggedWordsIds.includes(id)
-      }
-    }
-  },
-
-  mounted() {
-    document.addEventListener('click', this.closeItem);
-  },
-  beforeUnmount() {
-    document.removeEventListener('click', this.closeItem);
-  },
-
-  methods: {
-    onDragging(ev) {
+    function onDragging(ev) {
       ev.dataTransfer.setData("text", ev.target.id);
-    },
-    allowDrop(ev) {
+    }
+
+    function allowDrop(ev) {
       ev.preventDefault();
-    },
-    drop(ev) {
+    }
+
+    function drop(ev) {
       ev.preventDefault();
 
       if (ev.target.id !== 'box-droppable') {
         ev.target.textContent = '';
 
         let id = ev.dataTransfer.getData("text");
-        this.dragPlaceIds.push({[id]: ev.target.id })
+        dragPlaceIds.push({[id]: ev.target.id})
         const selectedItem = document.getElementById(id)
 
         //Clone item
-        const cloneNode = this.cloneNodeItem(selectedItem,id)
+        const cloneNode = cloneNodeItem(selectedItem, id)
 
         //Append Cloned node
-        this.draggedWordsIds.push(id)
+        draggedWordsIds.value.push(id)
         ev.target.appendChild(cloneNode);
       }
-    },
+    }
 
-    clickToSelect(id) {
-      if (this.transferWordId === id){
-        return  this.transferWordId = null
+    function clickToSelect(id) {
+      if (transferWordId.value === id) {
+        return transferWordId.value = null
       }
 
-      this.transferWordId = id
-    },
+      transferWordId.value = id
+    }
 
-    setDragItem(id) {
-      if (this.transferWordId) {
-        this.dragPlaceIds.push({[this.transferWordId]: id })
+    function setDragItem(e) {
+      if (transferWordId.value) {
+        const id = e.target.id
+        dragPlaceIds.push({[transferWordId.value]: id})
         const replaceContainer = document.getElementById(id)
-        const replaceItem = document.getElementById(this.transferWordId)
+        const replaceItem = document.getElementById(transferWordId.value)
         replaceItem.classList.remove('active')
 
         //Clone item
-        const cloneNode = this.cloneNodeItem(replaceItem,this.transferWordId)
+        const cloneNode = cloneNodeItem(replaceItem, transferWordId.value)
 
         //Append Cloned node
-        this.draggedWordsIds.push(this.transferWordId)
-        this.transferWordId = null
+        draggedWordsIds.value.push(transferWordId.value)
+        transferWordId.value = null
         document.getElementById(id).textContent = '';
         replaceContainer.appendChild(cloneNode);
       }
-    },
+    }
 
-    cloneNodeItem(selectedItem,id){
+    function cloneNodeItem(selectedItem, id) {
       //Clone node item
       let cloneNode = selectedItem.cloneNode(true)
       cloneNode.setAttribute('id', `copy-${id}`)
@@ -123,26 +143,36 @@ export default {
       cloneNode.appendChild(node)
 
       return cloneNode
-    },
+    }
 
-    closeItem(e) {
+    function closeItem(e) {
       if (e.target.id.includes('close')) {
         const closeId = e.target.id
         const wordId = closeId.slice(6)
 
-        this.dragPlaceIds = this.dragPlaceIds.filter((item)=> {
+        dragPlaceIds = dragPlaceIds.filter((item) => {
           if (Object.keys(item)[0] !== wordId) return item
           else {
             document.getElementById(Object.values(item)[0]).textContent = '....'
           }
         })
 
-        this.draggedWordsIds = this.draggedWordsIds.filter((item) => item !== wordId)
+        draggedWordsIds.value = draggedWordsIds.value.filter((item) => item !== wordId)
       }
     }
-  }
 
-}
+
+    return {
+      //State
+      transferWordId, dragPlaceIds, draggedWordsIds, wordList,
+
+      //Methods
+      isEnable, onDragging, allowDrop, drop, clickToSelect, setDragItem
+    };
+
+
+  }
+};
 </script>
 
 <style>
@@ -155,13 +185,23 @@ export default {
   margin-top: 60px;
 }
 
+.wrapper {
+  max-width: 1024px;
+  margin: 0px auto;
+  padding-bottom: 40px;
+}
+
 pre {
   line-height: 40px;
+  width: 100%;
 }
 
 .word {
-  background: green;
+  width: 100px;
+  margin-right: 50%;
+  background: #48978b;
   color: white;
+  text-align: center;
   border-radius: 8px;
   padding: 8px;
   cursor: pointer;
@@ -170,20 +210,21 @@ pre {
 
 .close {
   position: absolute;
-  background: red;
+  background: #c85674;
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
   top: -5px;
   right: -5px;
+  font-size: 11px;
 }
 
 .is-disabled {
-  background: #87b787;
+  background: #d8ecec;
   cursor: not-allowed;
 }
 
@@ -194,12 +235,18 @@ pre {
 
 .items {
   margin-top: 70px;
-  width: 300px;
-  display: flex;
+  width: 100%;
   justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+.item {
+  margin-top: 20px;
 }
 
 .drag-place {
+  color: #48978b;
   height: 40px;
   display: inline-block;
 }
